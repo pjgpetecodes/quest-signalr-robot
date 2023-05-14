@@ -108,6 +108,13 @@ public class SignalRController : MonoBehaviour
         }
     }
 
+    void FetchRobotParts()
+    {
+        robotController = robot.GetComponent<RobotController>();
+        baseArticulation = robotController.joints[0].robotPart.GetComponent<ArticulationBody>();
+        armArticulation = robotController.joints[1].robotPart.GetComponent<ArticulationBody>();
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -116,6 +123,11 @@ public class SignalRController : MonoBehaviour
 
     void setRemoteRotate(int value)
     {
+        if (baseArticulation == null)
+        {
+            FetchRobotParts();
+        }
+
         var drive = baseArticulation.xDrive;
         drive.target = value;
         baseArticulation.xDrive = drive;
@@ -126,6 +138,12 @@ public class SignalRController : MonoBehaviour
 
     void setRemoteReach(int value)
     {
+
+        if (armArticulation == null)
+        {
+            FetchRobotParts();
+        }
+
         var drive = armArticulation.xDrive;
         drive.target = value-90;
         armArticulation.xDrive = drive;
@@ -141,6 +159,12 @@ public class SignalRController : MonoBehaviour
 
         grabValue = (float)value;
         grabValue = (grabValue-75)/105;
+
+        if (robotController == null)
+        {
+            FetchRobotParts();
+        }
+
 
         robotController.joints[6].robotPart.GetComponent<PincherController>().grip = grabValue;
         GameObject.Find("GrabSlider").GetComponent<Slider>().value = value;
@@ -162,58 +186,68 @@ public class SignalRController : MonoBehaviour
 
     async void StartSignalR() {
 
-        connection = new HubConnectionBuilder()
-            .WithUrl("https://bcsrobotdevuksapp.azurewebsites.net/chathub")
-            .WithAutomaticReconnect()                
-            .Build();
-
-        connection.On<string, string>("ReceiveMessage", (user, message) =>
+        try
         {
-            var encodedMsg = $"{user}: {message}";
-            Debug.Log(encodedMsg);
+            connection = new HubConnectionBuilder()
+           .WithUrl("https://bcsrobotdevuksapp.azurewebsites.net/chathub")
+           .WithAutomaticReconnect()
+           .Build();
 
-            switch (user)
+            connection.On<string, string>("ReceiveMessage", (user, message) =>
             {
-                case "servo1":
+                var encodedMsg = $"{user}: {message}";
+                Debug.Log(encodedMsg);
 
-                    setRemoteRotate(Int32.Parse(message));
-                    remoteMoveRotation = true;
-                    GameObject.Find("RotateSlider").GetComponent<Slider>().interactable = false;
-                    disableRotationTimer.AutoReset = false;
-                    disableRotationTimer.Start();
-                    break;
+                switch (user)
+                {
+                    case "servo1":
 
-                case "servo2":
+                        setRemoteRotate(Int32.Parse(message));
+                        remoteMoveRotation = true;
+                        GameObject.Find("RotateSlider").GetComponent<Slider>().interactable = false;
+                        disableRotationTimer.AutoReset = false;
+                        disableRotationTimer.Start();
+                        break;
 
-                    setRemoteReach(Int32.Parse(message));
-                    remoteMoveReach = true;
-                    GameObject.Find("ReachSlider").GetComponent<Slider>().interactable = false;
-                    disableReachTimer.AutoReset = false;
-                    disableReachTimer.Start();
-                    break;
+                    case "servo2":
 
-                case "servo3":
+                        setRemoteReach(Int32.Parse(message));
+                        remoteMoveReach = true;
+                        GameObject.Find("ReachSlider").GetComponent<Slider>().interactable = false;
+                        disableReachTimer.AutoReset = false;
+                        disableReachTimer.Start();
+                        break;
 
-                    setRemoteGrab(Int32.Parse(message));
-                    remoteMoveGrab = true;
-                    GameObject.Find("GrabSlider").GetComponent<Slider>().interactable = false;
-                    disableGrabTimer.AutoReset = false;
-                    disableGrabTimer.Start();
-                    
-                    break;
-            }
-            
-        });
+                    case "servo3":
 
-        robotController = robot.GetComponent<RobotController>();
-        baseArticulation = robotController.joints[0].robotPart.GetComponent<ArticulationBody>();
-        armArticulation = robotController.joints[1].robotPart.GetComponent<ArticulationBody>();
-        
-        disableRotationTimer.Elapsed += rotationDisableTimerExpired;
-        disableReachTimer.Elapsed += reachDisableTimerExpired;
-        disableGrabTimer.Elapsed += grabDisableTimerExpired;
+                        setRemoteGrab(Int32.Parse(message));
+                        remoteMoveGrab = true;
+                        GameObject.Find("GrabSlider").GetComponent<Slider>().interactable = false;
+                        disableGrabTimer.AutoReset = false;
+                        disableGrabTimer.Start();
 
-        await connection.StartAsync();
+                        break;
+                }
+
+            });
+
+            robotController = robot.GetComponent<RobotController>();
+            baseArticulation = robotController.joints[0].robotPart.GetComponent<ArticulationBody>();
+            armArticulation = robotController.joints[1].robotPart.GetComponent<ArticulationBody>();
+
+            disableRotationTimer.Elapsed += rotationDisableTimerExpired;
+            disableReachTimer.Elapsed += reachDisableTimerExpired;
+            disableGrabTimer.Elapsed += grabDisableTimerExpired;
+
+            await connection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+
+            throw;
+        }
+
+       
     }
 
 

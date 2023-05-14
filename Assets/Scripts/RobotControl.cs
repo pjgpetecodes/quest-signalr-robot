@@ -22,6 +22,11 @@ public class RobotControl : MonoBehaviour
         Rotation = value.ToString();
         Debug.Log("Rotation is " + value.ToString() );
 
+        if (robotSignalRController == null )
+        {
+            robotSignalRController = robot.GetComponent<SignalRController>();
+        }
+
         robotSignalRController.SetRotation(value);
     }
 
@@ -30,7 +35,13 @@ public class RobotControl : MonoBehaviour
             
         Reach = value.ToString();
         Debug.Log("Reach is " + value.ToString() );
-        
+
+        if (robotSignalRController == null)
+        {
+            robotSignalRController = robot.GetComponent<SignalRController>();
+        }
+
+
         robotSignalRController.SetReach(value);
     }
 
@@ -38,6 +49,12 @@ public class RobotControl : MonoBehaviour
     {
         Grab = value.ToString();
         Debug.Log("Grab is " + value.ToString() );
+
+        if (robotSignalRController == null)
+        {
+            robotSignalRController = robot.GetComponent<SignalRController>();
+        }
+
         robotSignalRController.SetGrab(value);
     }
 
